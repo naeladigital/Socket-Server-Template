@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Casbo-Lab - Interfaz WebSockets</title>
+</head>
+<body>
+
+    <h1>🚀 Interfaz Conectada con TouchDesigner</h1>
+    <p>Revisa la consola (F12) o los mensajes aquí:</p>
+    
+    <div id="mensajes" style="border: 1px solid #ccc; padding: 10px; min-height: 50px;">
+        </div>
+
+    <button onclick="enviarMensaje()">Enviar Mensaje a TouchDesigner</button>
+
+    <script>
+        // 🚨 MUY IMPORTANTE: Cambia esta URL por la tuya. Ya sabemos que es HTTPS, así que usa WSS.
+        const socket = new WebSocket('wss://casbo-lab.onrender.com/'); 
+
+        const mensajesDiv = document.getElementById('mensajes');
+        
+        // Función para mostrar mensajes en la web
+        function mostrarMensaje(texto, color = 'black') {
+            mensajesDiv.innerHTML += `<div style="color: ${color}; margin-bottom: 5px;">${texto}</div>`;
+        }
+
+        // 1. Conexión establecida
+        socket.onopen = function(e) {
+            console.log("[open] Conexión establecida.");
+            mostrarMensaje("[SYSTEM] Conexión establecida con Render.", 'green');
+        };
+
+        // 2. Manejar mensajes entrantes (de TouchDesigner)
+        socket.onmessage = function(event) {
+            // Ignorar los mensajes 'ping' que solo son para mantener viva la conexión
+            if (event.data !== 'ping') {
+                console.log(`[message] Datos recibidos: ${event.data}`);
+                mostrarMensaje(`TouchDesigner dice: ${event.data}`);
+            } else {
+                // Si es un ping, responder con 'pong' para mantener la conexión viva en Render
+                socket.send('pong');
+            }
+        };
+
+        // 3. Manejar errores
+        socket.onerror = function(error) {
+            console.error(`[error] WebSocket Error:`, error);
+            mostrarMensaje(`[ERROR] Conexión fallida.`, 'red');
+        };
+        
+        // 4. Conexión cerrada
+        socket.onclose = function(e) {
+            console.log("[close] Conexión cerrada.");
+            mostrarMensaje(`[SYSTEM] Conexión cerrada. Código: ${e.code}`, 'gray');
+        };
+
+        // 5. Función para enviar mensajes
+        function enviarMensaje() {
+            const mensaje = "Hola desde la Web: " + new Date().toLocaleTimeString();
+            socket.send(mensaje);
+            mostrarMensaje(`[YO] Enviado: ${mensaje}`, 'blue');
+        }
+
+    </script>
+
+</body>
+</html>
